@@ -34,10 +34,34 @@ def parallel(q: str, items: list[str]):
         responses.append(response.choices[0].text)
     return responses
 
-def generate_list(category: str):
-    prompt = f"Q: Give a full, comma-separated list of {category}?\nA:"
+def parallel_one_question(q: str, items: list[str]):
+    prompt = f"""For each of the items in the list, answer the following question, replacing the "{{}}" with the item:
+-------------------
+Items: New York, Michigan, Alabama, California, Texas
+Question: What is the capitol of {{}}?
+Answers:
+New York: New York City
+Michigan: Lansing
+Alabama: Montgomery
+California: Sacremento
+Texas: Austin
+-------------------
+Items: {", ".join(items)}
+Question: {q}
+Answers:"""
     response = openai.Completion.create(
-        engine="text-davinci-001",
+        engine="text-davinci-002",
+        prompt=prompt,
+        temperature=0.5,
+        max_tokens=150,
+        top_p=1,
+    )
+    return response.choices[0].text
+
+def generate_list(category: str):
+    prompt = f"Q: Give a full, comma-separated list of {category}.\nA:"
+    response = openai.Completion.create(
+        engine="text-davinci-002",
         prompt=prompt,
         temperature=0.5,
         max_tokens=150,
@@ -73,10 +97,11 @@ if __name__ == "__main__":
                 else:
                     values_okay = True
 
-            responses = parallel(inp, values)
+            responses = parallel_one_question(inp, values)
             print("Answers:")
-            for value, response in zip(values, responses):
-                print(f"{value}: {response}")
+            print(responses)
+            # for value, response in zip(values, responses):
+            #     print(f"{value}: {response}")
         else:
             print("Answer:", singular(inp))
         print("-----------------------------------------------")
